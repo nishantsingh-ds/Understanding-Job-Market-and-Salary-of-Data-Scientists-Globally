@@ -1,0 +1,244 @@
+---
+title: "Understanding the Job Market and Salary of Data Scientists  all around the World."
+output:
+word_document: default
+html_document: default
+---
+
+```{r}  
+# Load the  dataset
+datascience <- read.csv("ds_salaries.csv")
+
+# Analyze the distribution of salary and discuss if the distribution is symmetric, or if you need to apply any transformation.
+
+# Load the necessary libraries
+library(ggplot2)
+library(dplyr)
+
+
+
+# Create a histogram of Salary
+hist(datascience$salary_in_usd, main = "Distribution of Salary")
+
+
+#Now we need to add transformation because the distribution of salary is right skewed
+
+# Create a histogram of Salary
+hist(sqrt(datascience$salary_in_usd), main = "Distribution of Salary")
+
+
+# Calculate the skewness and kurtosis of Salary
+#install.packages("e1071")
+library(e1071)
+
+skewness1 <- skewness(datascience$salary_in_usd)
+skewness <- skewness(sqrt(datascience$salary_in_usd))
+kurtosis <- kurtosis(sqrt(datascience$salary_in_usd))
+print("Skewness befo transformation")
+print(skewness1)
+print("Skewness after transformation")
+print(skewness)
+
+
+```
+
+```{r}
+
+# The square root transformation has reduced the skewness of the data, as indicated by the skewness value of approximately 0.187. A skewness value close to 0 indicates that the data is approximately symmetric. In this case, the data is much closer to being normally distributed than it was before the transformation, which had right-skewness.
+#The kurtosis value of approximately 0.809 suggests that the distribution has slightly more peakedness (leptokurtic) compared to a normal distribution (which has a kurtosis of 3). However, the kurtosis value is not too far from 3, so it's not a significant departure from normality in terms of kurtosis.
+#In summary, the square root transformation has made the salary data more symmetric and brought it closer to a normal distribution. This transformation may be useful if you plan to perform parametric statistical analyses that assume a normal distribution, as it helps to meet the assumptions of those tests.
+
+# Get unique values from column
+unique_experience <- unique(datascience$experience_level)
+unique_employment <- unique(datascience$employment_type)
+unique_job_title <- unique(datascience$job_title)
+unique_company_size <- unique(datascience$company_size)
+
+# Print the unique names
+print(unique_experience)
+print(unique_employment)
+print(unique_company_size)
+
+#Dummy Variables
+
+# Convert 'experience_level' to a factor to get unique levels
+datascience$experience_level <- as.factor(datascience$experience_level)
+# Get the integer levels assigned to each category
+datascience$experience_level <- as.integer(datascience$experience_level)
+
+# Convert 'employment_type' to a factor to get unique levels
+datascience$employment_type <- as.factor(datascience$employment_type)
+# Get the integer levels assigned to each category
+datascience$employment_type <- as.integer(datascience$employment_type)
+
+# Convert 'company_size' to a factor to get unique levels
+datascience$company_size <- as.factor(datascience$company_size)
+# Get the integer levels assigned to each category
+datascience$company_size <- as.integer(datascience$company_size)
+
+# Convert 'salary_currency' to a factor to get unique levels
+datascience$salary_currency <- as.factor(datascience$salary_currency)
+# Get the integer levels assigned to each category
+datascience$salary_currency <- as.integer(datascience$salary_currency)
+
+# Convert 'employee_residence' to a factor to get unique levels
+datascience$employee_residence <- as.factor(datascience$employee_residence)
+# Get the integer levels assigned to each category
+datascience$employee_residence <- as.integer(datascience$employee_residence)
+
+# Convert 'company_location' to a factor to get unique levels
+datascience$company_location <- as.factor(datascience$company_location)
+# Get the integer levels assigned to each category
+datascience$company_location <- as.integer(datascience$company_location)
+
+## Create scatterplots
+pairs(datascience[, c("work_year","salary","salary_in_usd", "remote_ratio", "experience_level", "employment_type", "company_size")])
+
+plot(datascience$salary_in_usd,datascience$work_year)
+plot(datascience$salary_in_usd,datascience$employment_type)
+plot(datascience$salary_in_usd,datascience$experience_level)
+plot(datascience$salary_in_usd,datascience$salary_currency )
+plot(datascience$salary_in_usd,datascience$employee_residence )
+plot(datascience$salary_in_usd,datascience$remote_ratio )
+plot(datascience$salary_in_usd,datascience$company_location )
+plot(datascience$salary_in_usd,datascience$company_size )
+
+#correlation
+correlation_matrix <- cor(datascience[, c("work_year","experience_level","employment_type", "salary_currency", "salary_in_usd","employee_residence", "remote_ratio","company_location", "company_size")])
+
+# Extract the correlations for salary_in_usd
+correlation_with_salary_usd <- correlation_matrix["salary_in_usd", ]
+
+# Sort the correlations in descending order
+sorted_correlations <- sort(correlation_with_salary_usd, decreasing = TRUE)
+
+# Print the sorted correlations
+print(sorted_correlations)
+
+```
+```{r}
+# Build boxplots to evaluate if salary in usd vary by experience level, by work year, by employment_type, by salary_currency, by employee_residence, by remote_ratio, by company_size
+boxplot(salary_in_usd ~ experience_level, data = datascience, main = " Salary by Experience")
+boxplot(salary_in_usd ~ work_year, data = datascience, main = " Salary by Work Year")
+boxplot(salary_in_usd ~ employment_type, data = datascience, main = " Salary by Employment Type")
+boxplot(salary_in_usd ~ salary_currency, data = datascience, main = " Salary by Currency Type")
+boxplot(salary_in_usd ~ employee_residence, data = datascience, main = " Salary by Employee Residence Type")
+boxplot(salary_in_usd ~ remote_ratio, data = datascience, main = " Salary by Remote Ratio of Jobs")
+ boxplot(salary_in_usd ~ company_size, data = datascience, main = " Salary by Size of Company")
+```
+```{r}
+# Removing unnecessary variables
+datascience <- datascience[, !(names(datascience) %in% c("X", "job_title", "salary"))]
+
+
+# Fit a full model (with all independent variables) to predict Salary
+full_model <- lm(salary_in_usd ~ work_year + experience_level + employment_type+ salary_currency + employee_residence + remote_ratio + company_location + company_size , data = datascience)
+summary(full_model)
+
+# Removing non-significant variables and then creating new model
+full_model2 <- lm(salary_in_usd ~ experience_level + salary_currency + employee_residence + company_size , data = datascience)
+summary(full_model2)
+
+# Transforming the dependent variabe with Square Root
+full_model3 <- lm(sqrt(salary_in_usd) ~ experience_level + salary_currency + employee_residence + company_size , data = datascience)
+summary(full_model3)
+```
+```{r}
+
+# multi-collinearity seem to be a problem here?
+
+#install.packages("car")
+library(car)
+
+correlation_matrix
+
+# Compute the VIF statistics
+vif(full_model3)
+```
+```{r}
+
+#RESIDUAL ANALYSIS
+
+#standardized residuals vs fitted values plot
+plot(fitted(full_model3), rstandard(full_model3), main="Predicted vs residuals plot")
+abline(a=0, b=0, col='red')
+#Here, the plot shows random pattern and so is a good model.
+
+#standardized residuals vs independent variables
+plot( datascience$experience_level, rstandard(full_model3), main="experience_level vs residuals plot")
+abline(a=0, b=0,col='red')
+#Here, the plot shows random pattern and so is a good model.
+
+#standardized residuals vs independent variables
+plot( datascience$salary_currency, rstandard(full_model3), main="salary_currency vs residuals plot")
+abline(a=0, b=0,col='red')
+#Here, the plot shows random pattern and so is a good model.
+
+#standardized residuals vs independent variables
+plot( datascience$employee_residence , rstandard(full_model3), main="employee_residence vs residuals plot")
+abline(a=0, b=0,col='red')
+#Here, the plot shows random pattern and so is a good model.
+
+#standardized residuals vs independent variables
+plot( datascience$company_size , rstandard(full_model3), main="company_size vs residuals plot")
+abline(a=0, b=0,col='red')
+#Here, the plot shows random pattern and so is a good model.
+
+#normal probability plot of residuals
+qqnorm(rstandard(full_model3))
+qqline(rstandard(full_model3), col = 2)
+#Here, the points lies on the line with some points as they seem like an outlier are cancelled out at both of the tails.
+```
+
+```{r}
+#INFLUENTIAL POINTS
+
+influence.measures(full_model3) # influential point measures
+
+# print out only observations that may be influential 
+summary(influence.measures(full_model3))
+
+# plot of deleted studentized residuals vs hat values
+plot(rstudent(full_model3)~hatvalues(full_model3))
+
+#There seem some influential as we verify one or more of following criteria:
+# High leverage hat hii value (> 0.5) 
+# High Cook’s D distance (>1) 
+# High Deleted Studentized Residuals (outside (-3,3) band)
+# There are 5points which seem to be outlier because these are outside (-3,3)band os studentized residuals.
+
+rstudent(full_model3)
+# to retrieve various influential statistics
+dfbeta(full_model3) 
+covratio(full_model3)
+dffits(full_model3)
+cooks.distance(full_model3)
+
+#standardized coefficients
+library(QuantPsyc) #load package
+lm.beta(full_model3) # compute standardized parameters
+# Here, experience_level seems to have greatest influence on the salary as compared to any other variabke.
+```
+```{r}
+#Predictions
+new1 = data.frame(experience_level=c(3), salary_currency=c(9),employee_residence=c(21), company_size=c(2))
+new2 = data.frame(experience_level=c(4), salary_currency=c(8),employee_residence=c(33), company_size=c(1))
+new3 = data.frame(experience_level=c(1), salary_currency=c(17),employee_residence=c(56), company_size=c(3))
+
+
+# compute average response value and confidence interval
+predictions_sqrt1=predict(full_model3, new1, interval="confidence",level=0.95)
+predictions_sqrt2=predict(full_model3, new2, interval="confidence",level=0.95)
+predictions_sqrt3=predict(full_model3, new3, interval="confidence",level=0.95)
+
+# Inverse the square root transformation
+predicted_salary1 <- (predictions_sqrt1)^2
+predicted_salary2 <- (predictions_sqrt2)^2
+predicted_salary3 <- (predictions_sqrt3)^2
+
+# Print the predicted salary
+print(predicted_salary1)
+print(predicted_salary2)
+print(predicted_salary3)
+
+```
